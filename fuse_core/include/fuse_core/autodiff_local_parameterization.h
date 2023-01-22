@@ -36,7 +36,7 @@
 
 #include <fuse_core/local_parameterization.h>
 #include <fuse_core/ceres_options.h>
-#include <fuse_core/macros.h>
+#include <fuse_core/fuse_macros.h>
 
 #include <ceres/internal/autodiff.h>
 
@@ -77,7 +77,7 @@ template <typename PlusFunctor, typename MinusFunctor, int kGlobalSize, int kLoc
 class AutoDiffLocalParameterization : public LocalParameterization
 {
 public:
-  SMART_PTR_DEFINITIONS(AutoDiffLocalParameterization<PlusFunctor, MinusFunctor, kGlobalSize, kLocalSize>);
+  FUSE_SMART_PTR_DEFINITIONS(AutoDiffLocalParameterization<PlusFunctor, MinusFunctor, kGlobalSize, kLocalSize>);
 
   /**
    * @brief Constructs new PlusFunctor and MinusFunctor instances
@@ -190,7 +190,7 @@ bool AutoDiffLocalParameterization<PlusFunctor, MinusFunctor, kGlobalSize, kLoca
   return ceres::internal::AutoDiff<PlusFunctor, double, kGlobalSize, kLocalSize>
     ::Differentiate(*plus_functor_, parameter_ptrs, kGlobalSize, x_plus_delta, jacobian_ptrs);
 #else
-  return ceres::internal::AutoDifferentiate<ceres::internal::StaticParameterDims<kGlobalSize, kLocalSize>>(
+  return ceres::internal::AutoDifferentiate<kGlobalSize, ceres::internal::StaticParameterDims<kGlobalSize, kLocalSize>>(
       *plus_functor_, parameter_ptrs, kGlobalSize, x_plus_delta, jacobian_ptrs);
 #endif
 }
@@ -217,7 +217,8 @@ bool AutoDiffLocalParameterization<PlusFunctor, MinusFunctor, kGlobalSize, kLoca
   return ceres::internal::AutoDiff<MinusFunctor, double, kGlobalSize, kGlobalSize>
     ::Differentiate(*minus_functor_, parameter_ptrs, kLocalSize, delta, jacobian_ptrs);
 #else
-  return ceres::internal::AutoDifferentiate<ceres::internal::StaticParameterDims<kGlobalSize, kGlobalSize>>(
+  using StaticParameters = ceres::internal::StaticParameterDims<kGlobalSize, kGlobalSize>;
+  return ceres::internal::AutoDifferentiate<kLocalSize, StaticParameters>(
       *minus_functor_, parameter_ptrs, kLocalSize, delta, jacobian_ptrs);
 #endif
 }
