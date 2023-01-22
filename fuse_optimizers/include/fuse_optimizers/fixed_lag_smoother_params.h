@@ -48,33 +48,33 @@
 
 namespace fuse_optimizers
 {
-/**
- * @brief Defines the set of parameters required by the fuse_optimizers::FixedLagSmoother class
- */
-struct FixedLagSmootherParams : public WindowedOptimizerParams
-{
-public:
-  SMART_PTR_DEFINITIONS(FixedLagSmootherParams);
-
   /**
-   * @brief The duration of the smoothing window in seconds
+   * @brief Defines the set of parameters required by the fuse_optimizers::FixedLagSmoother class
    */
-  ros::Duration lag_duration{ 5.0 };
-
-  /**
-   * @brief Method for loading parameter values from ROS.
-   *
-   * @param[in] nh - The ROS node handle with which to load parameters
-   */
-  void loadFromROS(const ros::NodeHandle& nh)
+  struct FixedLagSmootherParams : public WindowedOptimizerParams
   {
-    WindowedOptimizerParams::loadFromROS(nh);
+  public:
+    FUSE_SMART_PTR_DEFINITIONS(FixedLagSmootherParams);
 
-    // Read settings from the parameter server
-    fuse_core::getPositiveParam(nh, "lag_duration", lag_duration);
-  }
-};
+    /**
+     * @brief The duration of the smoothing window in seconds
+     */
+    ros::Duration lag_duration{5.0};
 
-}  // namespace fuse_optimizers
+    /**
+     * @brief Method for loading parameter values from ROS.
+     *
+     * @param[in] nh - The ROS node handle with which to load parameters
+     */
+    void loadFromROS(const ros::NodeHandle &nh)
+    {
+      WindowedOptimizerParams::loadFromROS(nh);
 
-#endif  // FUSE_OPTIMIZERS_FIXED_LAG_SMOOTHER_PARAMS_H
+      // Read settings from the parameter server
+      fuse_core::getPositiveParam(nh, "lag_duration", lag_duration);
+    }
+  };
+
+} // namespace fuse_optimizers
+
+#endif // FUSE_OPTIMIZERS_FIXED_LAG_SMOOTHER_PARAMS_H

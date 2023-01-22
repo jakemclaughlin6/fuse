@@ -40,33 +40,33 @@
 
 namespace fuse_optimizers
 {
-/**
- * @brief Defines the set of parameters required by the fuse_optimizers::FixedSizeSmoother class
- */
-struct FixedSizeSmootherParams : public WindowedOptimizerParams
-{
-public:
-  SMART_PTR_DEFINITIONS(FixedSizeSmootherParams);
-
   /**
-   * @brief Thenumber of unique stamps in the window
+   * @brief Defines the set of parameters required by the fuse_optimizers::FixedSizeSmoother class
    */
-  int num_states{ 10 };
-
-  /**
-   * @brief Method for loading parameter values from ROS.
-   *
-   * @param[in] nh - The ROS node handle with which to load parameters
-   */
-  void loadFromROS(const ros::NodeHandle& nh)
+  struct FixedSizeSmootherParams : public WindowedOptimizerParams
   {
-    WindowedOptimizerParams::loadFromROS(nh);
+  public:
+    FUSE_SMART_PTR_DEFINITIONS(FixedSizeSmootherParams);
 
-    // Read settings from the parameter server
-    fuse_core::getPositiveParam(nh, "num_states", num_states);
-  }
-};
+    /**
+     * @brief Thenumber of unique stamps in the window
+     */
+    int num_states{10};
 
-}  // namespace fuse_optimizers
+    /**
+     * @brief Method for loading parameter values from ROS.
+     *
+     * @param[in] nh - The ROS node handle with which to load parameters
+     */
+    void loadFromROS(const ros::NodeHandle &nh)
+    {
+      WindowedOptimizerParams::loadFromROS(nh);
 
-#endif  // FUSE_OPTIMIZERS_FIXED_SIZE_SMOOTHER_PARAMS_H
+      // Read settings from the parameter server
+      fuse_core::getPositiveParam(nh, "num_states", num_states);
+    }
+  };
+
+} // namespace fuse_optimizers
+
+#endif // FUSE_OPTIMIZERS_FIXED_SIZE_SMOOTHER_PARAMS_H
