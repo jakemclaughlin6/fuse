@@ -164,38 +164,9 @@ void WindowedOptimizer::optimizationLoop()
       {
         continue;
       }
-      // check if new transaction has added constraints to variables that are to be marginalized
-      std::vector<fuse_core::UUID> faulty_constraints;
-      for (auto& c : new_transaction->addedConstraints())
-      {
-        for (auto var_uuid : c.variables())
-        {
-          for (auto marginal_uuid : marginal_transaction_.removedVariables())
-          {
-            if (var_uuid == marginal_uuid)
-            {
-              faulty_constraints.push_back(c.uuid());
-              break;
-            }
-          }
-        }
-      }
-      if (faulty_constraints.size() > 0)
-      {
-        ROS_WARN_STREAM("Removing invalid constraints.");
-        for (auto& faulty_constraint : faulty_constraints)
-        {
-          new_transaction->removeConstraint(faulty_constraint);
-        }
-      }
 
-      // Prepare for selecting the marginal variables -- Delegated to derived classes
-      preprocessMarginalization(*new_transaction);
-      // Combine the new transactions with any marginal transaction from the end of the last cycle
-      new_transaction->merge(marginal_transaction_);
-      // Update the graph
-      try
-      {
+      // apply new transaction
+      try {
         graph_->update(*new_transaction);
       }
       catch (const std::exception& ex)
@@ -213,23 +184,22 @@ void WindowedOptimizer::optimizationLoop()
         ros::requestShutdown();
         break;
       }
+
       // Optimize the entire graph
       summary_ = graph_->optimize(params_->solver_options);
-
-      // Optimization is complete. Notify all the things about the graph changes.
-      const auto new_transaction_stamp = new_transaction->stamp();
-      notify(std::move(new_transaction), graph_->clone());
 
       // Abort if optimization failed. Not converging is not a failure because the solution found is usable.
       if (!summary_.IsSolutionUsable())
       {
         ROS_FATAL_STREAM("Optimization failed after updating the graph with the transaction with timestamp "
-                         << new_transaction_stamp << ". Leaving optimization loop and requesting node shutdown...");
+                         << new_transaction->stamp()<< ". Leaving optimization loop and requesting node shutdown...");
         ROS_INFO_STREAM(summary_.FullReport());
         ros::requestShutdown();
         break;
       }
 
+      // Prepare for selecting the marginal variables -- Delegated to derived classes
+      preprocessMarginalization(marginal_transaction_);
       // Marginal out any variables outside of the current "window"
       // Determination of which variables to marginalize is delegated to derived classes
       auto variables_to_marginalize = computeVariablesToMarginalize();
@@ -237,7 +207,6 @@ void WindowedOptimizer::optimizationLoop()
           fuse_constraints::marginalizeVariables(ros::this_node::getName(), variables_to_marginalize, *graph_);
       // Perform any post-marginal cleanup -- Delegated to derived classes
       postprocessMarginalization(marginal_transaction_);
-      // Note: The marginal transaction will not be applied until the next optimization iteration
       // Log a warning if the optimization took too long
       auto optimization_complete = ros::Time::now();
       if (optimization_complete > optimization_deadline)
@@ -245,6 +214,9 @@ void WindowedOptimizer::optimizationLoop()
         ROS_WARN_STREAM_THROTTLE(10.0, "Optimization exceeded the configured duration by "
                                            << (optimization_complete - optimization_deadline) << "s");
       }
+
+      // Optimization is complete. Notify all the things about the graph changes.
+      notify(std::move(new_transaction), graph_->clone());
     }
   }
 }
