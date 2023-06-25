@@ -6,6 +6,8 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
 )
 
+set(CMAKE_BUILD_TYPE "release")
+
 add_message_files(
   DIRECTORY
     msg

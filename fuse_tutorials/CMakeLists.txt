@@ -11,6 +11,8 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
 )
 
+set(CMAKE_BUILD_TYPE "release")
+
 catkin_package(
   INCLUDE_DIRS
     include

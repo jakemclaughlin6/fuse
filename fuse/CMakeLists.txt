@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(fuse)
 find_package(catkin REQUIRED)
+set(CMAKE_BUILD_TYPE "release")
 catkin_metapackage()

@@ -13,6 +13,8 @@ set(build_depends
   tf2_ros
 )
 
+set(CMAKE_BUILD_TYPE "release")
+
 find_package(catkin REQUIRED COMPONENTS
   ${build_depends}
 )

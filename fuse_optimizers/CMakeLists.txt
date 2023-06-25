@@ -12,6 +12,8 @@ set(build_depends
   std_srvs
 )
 
+set(CMAKE_BUILD_TYPE "release")
+
 find_package(OpenMP)
 
 find_package(catkin REQUIRED COMPONENTS

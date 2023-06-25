@@ -7,6 +7,8 @@ set(build_depends
   roscpp
 )
 
+set(CMAKE_BUILD_TYPE "release")
+
 find_package(catkin REQUIRED COMPONENTS
   ${build_depends}
 )
