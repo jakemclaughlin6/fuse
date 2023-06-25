@@ -43,25 +43,41 @@
 #include <stdexcept>
 #include <vector>
 
+
 namespace fuse_optimizers
 {
-ros::Time VariableStampIndex::operator[](int i)
+
+ros::Time VariableStampIndex::currentStamp() const
 {
-  if (unique_stamps_.empty() || i < 0)
+  auto compare_stamps = [](const StampedMap::value_type& lhs, const StampedMap::value_type& rhs)
   {
-    return ros::Time(0, 0);
-  }
-  else if ((size_t)i < unique_stamps_.size())
+    return lhs.second < rhs.second;
+  };
+  auto iter = std::max_element(stamped_index_.begin(), stamped_index_.end(), compare_stamps);
+  if (iter != stamped_index_.end())
   {
-    uint64_t stamp_id = (*std::next(unique_stamps_.begin(), i)).first;
-    ros::Time stamp;
-    stamp.fromNSec(stamp_id);
-    return stamp;
+    return iter->second;
   }
   else
   {
-    throw std::runtime_error("Index exceeds size of Variable Stamp Index.");
+    return ros::Time(0, 0);
   }
+}
+
+ros::Time VariableStampIndex::at(const fuse_core::UUID& variable) const
+{
+  auto stamped_iter = stamped_index_.find(variable);
+  if (stamped_iter != stamped_index_.end())
+  {
+    return stamped_iter->second;
+  }
+  auto unstamped_iter = unstamped_index_.find(variable);
+  if (unstamped_iter != unstamped_index_.end())
+  {
+    return getMaxConstraintStamp(unstamped_iter->second);
+  }
+  throw std::out_of_range("The requested variable UUID '" + fuse_core::uuid::to_string(variable) + "' does not "
+                          "exist in this VariableStampIndex object.");
 }
 
 void VariableStampIndex::addNewTransaction(const fuse_core::Transaction& transaction)
@@ -85,10 +101,27 @@ void VariableStampIndex::applyAddedConstraints(const fuse_core::Transaction& tra
 {
   for (const auto& constraint : transaction.addedConstraints())
   {
-    constraints_[constraint.uuid()].insert(constraint.variables().begin(), constraint.variables().end());
+    auto stamp = ros::Time(0, 0);
+    auto unstamped_uuids = std::vector<fuse_core::UUID>();
     for (const auto& variable_uuid : constraint.variables())
     {
-      variables_[variable_uuid].insert(constraint.uuid());
+      auto stamped_iter = stamped_index_.find(variable_uuid);
+      if (stamped_iter != stamped_index_.end())
+      {
+        if (stamped_iter->second > stamp)
+        {
+          stamp = stamped_iter->second;
+        }
+      }
+      else
+      {
+        unstamped_uuids.push_back(variable_uuid);
+      }
+    }
+    auto contraint_info = ConstraintInfo::value_type(constraint.uuid(), stamp);
+    for (const auto& unstamped_uuid : unstamped_uuids)
+    {
+      unstamped_index_[unstamped_uuid].insert(contraint_info);
     }
   }
 }
@@ -100,19 +133,12 @@ void VariableStampIndex::applyAddedVariables(const fuse_core::Transaction& trans
     auto stamped_variable = dynamic_cast<const fuse_variables::Stamped*>(&variable);
     if (stamped_variable)
     {
-      uint64_t stamp = stamped_variable->stamp().toNSec();
       stamped_index_[variable.uuid()] = stamped_variable->stamp();
-      if (unique_stamps_.find(stamp) != unique_stamps_.end())
-      {
-        unique_stamps_[stamp].insert(variable.uuid());
-      }
-      else
-      {
-        std::unordered_set<fuse_core::UUID> set = { variable.uuid() };
-        unique_stamps_.insert({ stamp, set });
-      }
     }
-    variables_[variable.uuid()];  // Add an empty set of constraints
+    else
+    {
+      unstamped_index_[variable.uuid()];  // Add an empty set
+    }
   }
 }
 
@@ -120,34 +146,45 @@ void VariableStampIndex::applyRemovedConstraints(const fuse_core::Transaction& t
 {
   for (const auto& constraint_uuid : transaction.removedConstraints())
   {
-    for (auto& variable_uuid : constraints_[constraint_uuid])
+    for (auto& unstamped_variable : unstamped_index_)
     {
-      variables_[variable_uuid].erase(constraint_uuid);
+      unstamped_variable.second.erase(constraint_uuid);
     }
-    constraints_.erase(constraint_uuid);
   }
 }
 
 void VariableStampIndex::applyRemovedVariables(const fuse_core::Transaction& transaction)
 {
-  for (const auto& variable_uuid : transaction.removedVariables())
+  for (const auto& variable : transaction.removedVariables())
   {
-    // remove from unique stamps
-    auto stamp = stamped_index_[variable_uuid].toNSec();
-    if (unique_stamps_.find(stamp) != unique_stamps_.end())
+    auto stamped_iter = stamped_index_.find(variable);
+    if (stamped_iter != stamped_index_.end())
     {
-      if (unique_stamps_[stamp].find(variable_uuid) != unique_stamps_[stamp].end())
-      {
-        unique_stamps_[stamp].erase(variable_uuid);
-      }
-      if (unique_stamps_[stamp].size() == 0)
-      {
-        unique_stamps_.erase(stamp);
-      }
+      stamped_index_.erase(stamped_iter);
+      continue;
     }
+    auto unstamped_iter = unstamped_index_.find(variable);
+    if (unstamped_iter != unstamped_index_.end())
+    {
+      unstamped_index_.erase(unstamped_iter);
+    }
+  }
+}
 
-    stamped_index_.erase(variable_uuid);
-    variables_.erase(variable_uuid);
+ros::Time VariableStampIndex::getMaxConstraintStamp(const ConstraintInfo& constraints) const
+{
+  auto compare_stamps = [](const ConstraintInfo::value_type& lhs, const ConstraintInfo::value_type& rhs)
+  {
+    return lhs.second < rhs.second;
+  };
+  auto iter = std::max_element(constraints.begin(), constraints.end(), compare_stamps);
+  if (iter != constraints.end())
+  {
+    return iter->second;
+  }
+  else
+  {
+    return ros::Time(0, 0);
   }
 }
 

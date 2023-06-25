@@ -36,7 +36,6 @@
 
 #include <fuse_core/ceres_options.h>
 #include <fuse_core/parameter.h>
-#include <fuse_optimizers/windowed_optimizer_params.h>
 #include <ros/duration.h>
 #include <ros/node_handle.h>
 
@@ -46,35 +45,77 @@
 #include <string>
 #include <vector>
 
+
 namespace fuse_optimizers
 {
+
+/**
+ * @brief Defines the set of parameters required by the fuse_optimizers::FixedLagSmoother class
+ */
+struct FixedLagSmootherParams
+{
+public:
   /**
-   * @brief Defines the set of parameters required by the fuse_optimizers::FixedLagSmoother class
+   * @brief The duration of the smoothing window in seconds
    */
-  struct FixedLagSmootherParams : public WindowedOptimizerParams
+  ros::Duration lag_duration { 5.0 };
+
+  /**
+   * @brief The target duration for optimization cycles
+   *
+   * If an optimization takes longer than expected, an optimization cycle may be skipped. The optimization period
+   * may be specified in either the "optimization_period" parameter in seconds, or in the "optimization_frequency"
+   * parameter in Hz.
+   */
+  ros::Duration optimization_period { 0.1 };
+
+  /**
+   * @brief The topic name of the advertised reset service
+   */
+  std::string reset_service { "~reset" };
+
+  /**
+   * @brief The maximum time to wait for motion models to be generated for a received transaction.
+   *
+   * Transactions are processed sequentially, so no new transactions will be added to the graph while waiting for
+   * motion models to be generated. Once the timeout expires, that transaction will be deleted from the queue.
+   */
+  ros::Duration transaction_timeout { 0.1 };
+
+  /**
+   * @brief Ceres Solver::Options object that controls various aspects of the optimizer.
+   */
+  ceres::Solver::Options solver_options;
+
+  /**
+   * @brief Method for loading parameter values from ROS.
+   *
+   * @param[in] nh - The ROS node handle with which to load parameters
+   */
+  void loadFromROS(const ros::NodeHandle& nh)
   {
-  public:
-    FUSE_SMART_PTR_DEFINITIONS(FixedLagSmootherParams);
+    // Read settings from the parameter server
+    fuse_core::getPositiveParam(nh, "lag_duration", lag_duration);
 
-    /**
-     * @brief The duration of the smoothing window in seconds
-     */
-    ros::Duration lag_duration{5.0};
-
-    /**
-     * @brief Method for loading parameter values from ROS.
-     *
-     * @param[in] nh - The ROS node handle with which to load parameters
-     */
-    void loadFromROS(const ros::NodeHandle &nh)
+    if (nh.hasParam("optimization_frequency"))
     {
-      WindowedOptimizerParams::loadFromROS(nh);
-
-      // Read settings from the parameter server
-      fuse_core::getPositiveParam(nh, "lag_duration", lag_duration);
+      double optimization_frequency{ 1.0 / optimization_period.toSec() };
+      fuse_core::getPositiveParam(nh, "optimization_frequency", optimization_frequency);
+      optimization_period.fromSec(1.0 / optimization_frequency);
     }
-  };
+    else
+    {
+      fuse_core::getPositiveParam(nh, "optimization_period", optimization_period);
+    }
 
-} // namespace fuse_optimizers
+    nh.getParam("reset_service", reset_service);
 
-#endif // FUSE_OPTIMIZERS_FIXED_LAG_SMOOTHER_PARAMS_H
+    fuse_core::getPositiveParam(nh, "transaction_timeout", transaction_timeout);
+
+    fuse_core::loadSolverOptionsFromROS(ros::NodeHandle(nh, "solver_options"), solver_options);
+  }
+};
+
+}  // namespace fuse_optimizers
+
+#endif  // FUSE_OPTIMIZERS_FIXED_LAG_SMOOTHER_PARAMS_H

@@ -34,10 +34,10 @@
 #include <fuse_graphs/hash_graph.h>
 #include <fuse_graphs/hash_graph_params.h>
 #include <fuse_optimizers/fixed_lag_smoother.h>
-#include <fuse_optimizers/fixed_lag_smoother_params.h>
 #include <ros/ros.h>
 
-int main(int argc, char** argv)
+
+int main(int argc, char **argv)
 {
   ros::init(argc, argv, "fixed_lag_smoother_node");
   ros::NodeHandle private_node_handle("~");

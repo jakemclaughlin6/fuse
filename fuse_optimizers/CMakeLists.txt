@@ -1,6 +1,5 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 2.8.3)
 project(fuse_optimizers)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 
 set(build_depends
   diagnostic_updater
@@ -37,9 +36,7 @@ add_compile_options(-Wall -Werror)
 add_library(${PROJECT_NAME}
   src/batch_optimizer.cpp
   src/fixed_lag_smoother.cpp
-  src/fixed_size_smoother.cpp
   src/optimizer.cpp
-  src/windowed_optimizer.cpp
   src/variable_stamp_index.cpp
 )
 add_dependencies(${PROJECT_NAME}
@@ -102,28 +99,6 @@ target_link_libraries(fixed_lag_smoother_node
   ${catkin_LIBRARIES}
 )
 set_target_properties(fixed_lag_smoother_node
-  PROPERTIES
-    CXX_STANDARD 14
-    CXX_STANDARD_REQUIRED YES
-)
-
-## fixed_size_smoother node
-add_executable(fixed_size_smoother_node
-  src/fixed_size_smoother_node.cpp
-)
-add_dependencies(fixed_size_smoother_node
-  ${catkin_EXPORTED_TARGETS}
-)
-target_include_directories(fixed_size_smoother_node
-  PRIVATE
-    include
-    ${catkin_INCLUDE_DIRS}
-)
-target_link_libraries(fixed_size_smoother_node
-  ${PROJECT_NAME}
-  ${catkin_LIBRARIES}
-)
-set_target_properties(fixed_size_smoother_node
   PROPERTIES
     CXX_STANDARD 14
     CXX_STANDARD_REQUIRED YES

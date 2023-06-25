@@ -49,18 +49,27 @@ catkin_package(
 qt5_wrap_cpp(moc_files
   include/fuse_viz/mapped_covariance_property.h
   include/fuse_viz/pose_2d_stamped_property.h
+  include/fuse_viz/pose_3d_stamped_property.h
   include/fuse_viz/relative_pose_2d_stamped_constraint_property.h
+  include/fuse_viz/relative_pose_3d_stamped_constraint_property.h
   include/fuse_viz/serialized_graph_display.h
 )
 
 set(source_files
   src/mapped_covariance_property.cpp
   src/mapped_covariance_visual.cpp
+  # 2d graph display
   src/pose_2d_stamped_property.cpp
   src/pose_2d_stamped_visual.cpp
   src/relative_pose_2d_stamped_constraint_property.cpp
   src/relative_pose_2d_stamped_constraint_visual.cpp
   src/serialized_graph_display.cpp
+  # 3d graph display
+  src/pose_3d_stamped_property.cpp
+  src/pose_3d_stamped_visual.cpp
+  src/relative_pose_3d_stamped_constraint_property.cpp
+  src/relative_pose_3d_stamped_constraint_visual.cpp
+  src/serialized_graph_display_3d.cpp
   ${moc_files}
 )
 
