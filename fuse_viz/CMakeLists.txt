@@ -53,6 +53,7 @@ qt5_wrap_cpp(moc_files
   include/fuse_viz/relative_pose_2d_stamped_constraint_property.h
   include/fuse_viz/relative_pose_3d_stamped_constraint_property.h
   include/fuse_viz/serialized_graph_display.h
+  include/fuse_viz/serialized_graph_display_3d.h
 )
 
 set(source_files
