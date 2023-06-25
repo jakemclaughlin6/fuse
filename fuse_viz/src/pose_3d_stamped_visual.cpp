@@ -62,6 +62,9 @@ Pose3DStampedVisual::Pose3DStampedVisual(
                                           sphere_node_);
   setSphereColor(1.0, 0.0, 0.0, 1.0);
 
+  setScale(Ogre::Vector3(0.01, 0.01, 0.01));
+  setAxesAlpha(1.0);
+
   // Create axes:
   axes_node_ = root_node_->createChildSceneNode();
   axes_ = std::make_shared<rviz::Axes>(scene_manager_, axes_node_, 10.0, 1.0);
