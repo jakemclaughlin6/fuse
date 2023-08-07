@@ -217,9 +217,9 @@ auto exit_wait_condition = [this]() {
       }
 
       // Optimize the entire graph
-      ROS_INFO("Optimizing fuse graph");
+      ROS_DEBUG("Optimizing fuse graph");
       summary_ = graph_->optimize(params_.solver_options);
-      ROS_INFO("Done optimizing fuse graph");
+      ROS_DEBUG("Done optimizing fuse graph");
 
       // Abort if optimization failed. Not converging is not a failure because the solution found is usable.
       if (!summary_.IsSolutionUsable())
@@ -232,7 +232,7 @@ auto exit_wait_condition = [this]() {
       }
 
       // Prepare for selecting the marginal variables
-            ROS_INFO("Optimizing marginalizing graph");
+      ROS_DEBUG("Optimizing marginalizing graph");
       preprocessMarginalization(marginal_transaction_);
       lag_expiration_ = computeLagExpirationTime();
       marginal_transaction_ = fuse_constraints::marginalizeVariables(
@@ -241,7 +241,7 @@ auto exit_wait_condition = [this]() {
         *graph_);
       // Perform any post-marginal cleanup
       postprocessMarginalization(marginal_transaction_);
-            ROS_INFO("Done marginalizing fuse graph");
+      ROS_DEBUG("Done marginalizing fuse graph");
       // Log a warning if the optimization took too long
       auto optimization_complete = ros::Time::now();
       if (optimization_complete > optimization_deadline)
