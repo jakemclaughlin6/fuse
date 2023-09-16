@@ -233,7 +233,7 @@ auto exit_wait_condition = [this]() {
 
       // Prepare for selecting the marginal variables
       ROS_DEBUG("Optimizing marginalizing graph");
-      preprocessMarginalization(*new_transaction_);
+      preprocessMarginalization(*new_transaction);
       lag_expiration_ = computeLagExpirationTime();
       marginal_transaction_ = fuse_constraints::marginalizeVariables(
         ros::this_node::getName(),
